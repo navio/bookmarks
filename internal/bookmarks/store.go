@@ -20,6 +20,10 @@ type Bookmark struct {
 
 // DefaultPath returns the default TSV storage path.
 func DefaultPath() (string, error) {
+	if xdg := strings.TrimSpace(os.Getenv("XDG_CONFIG_HOME")); xdg != "" {
+		return filepath.Join(xdg, "bm", "bookmarks.tsv"), nil
+	}
+
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return "", fmt.Errorf("resolve home dir: %w", err)

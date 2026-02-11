@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -21,30 +23,46 @@ func main() {
 }
 
 func run(args []string) error {
-	if len(args) == 0 {
-		return errors.New(usage())
+	opts, rest, err := parseGlobalArgs(args)
+	if err != nil {
+		return err
 	}
-	if args[0] == "--version" {
+	if opts.version {
 		fmt.Printf("bm %s\n", version)
 		return nil
 	}
+	if opts.help || len(rest) == 0 {
+		fmt.Println(usage())
+		return nil
+	}
 
-	storePath, err := bookmarks.DefaultPath()
+	storePath := opts.storePath
+	if storePath == "" {
+		p, err := bookmarks.DefaultPath()
+		if err != nil {
+			return err
+		}
+		storePath = p
+	}
+	storePath, err = resolveStorePath(storePath)
 	if err != nil {
 		return err
 	}
 
-	switch args[0] {
+	switch rest[0] {
 	case "add":
-		return cmdAdd(storePath, args[1:])
+		return cmdAdd(storePath, rest[1:])
 	case "ls":
-		return cmdList(storePath, args[1:])
+		return cmdList(storePath, rest[1:])
 	case "path":
-		return cmdPath(storePath, args[1:])
+		return cmdPath(storePath, rest[1:])
 	case "rm":
-		return cmdRemove(storePath, args[1:])
+		return cmdRemove(storePath, rest[1:])
+	case "help":
+		fmt.Println(usage())
+		return nil
 	default:
-		return fmt.Errorf("unknown command: %s\n\n%s", args[0], usage())
+		return fmt.Errorf("unknown command: %s\n\n%s", rest[0], usage())
 	}
 }
 
@@ -129,6 +147,9 @@ func cmdList(storePath string, args []string) error {
 		}
 		filtered = append(filtered, entry)
 	}
+	sort.Slice(filtered, func(i, j int) bool {
+		return filtered[i].Name < filtered[j].Name
+	})
 
 	if jsonOutput {
 		payload := make([]map[string]any, 0, len(filtered))
@@ -277,8 +298,64 @@ func parseArgs(args []string, allowed map[string]bool) (parsedArgs, error) {
 func usage() string {
 	return strings.TrimSpace(`usage:
   bm --version
+  bm [--store <path>] <command>
   bm add <name> [path] [--tags a,b,c]
   bm ls [--json] [--tag x]
   bm path <name>
-  bm rm <name> [-f|--force]`)
+  bm rm <name> [-f|--force]
+
+global flags:
+  --store <path>   override default store path
+  -h, --help       show help
+  --version        print version`)
+}
+
+type globalOpts struct {
+	storePath string
+	help      bool
+	version   bool
+}
+
+func parseGlobalArgs(args []string) (globalOpts, []string, error) {
+	opts := globalOpts{}
+	rest := make([]string, 0, len(args))
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		switch {
+		case arg == "--version":
+			opts.version = true
+		case arg == "-h" || arg == "--help":
+			opts.help = true
+		case arg == "--store":
+			if i+1 >= len(args) {
+				return opts, nil, errors.New("flag --store requires a value")
+			}
+			i++
+			opts.storePath = args[i]
+		case strings.HasPrefix(arg, "--store="):
+			_, v, _ := strings.Cut(arg, "=")
+			if strings.TrimSpace(v) == "" {
+				return opts, nil, errors.New("flag --store requires a value")
+			}
+			opts.storePath = v
+		default:
+			rest = append(rest, arg)
+		}
+	}
+	return opts, rest, nil
+}
+
+func resolveStorePath(path string) (string, error) {
+	trimmed := strings.TrimSpace(path)
+	if trimmed == "" {
+		return "", errors.New("store path cannot be empty")
+	}
+	if filepath.IsAbs(trimmed) {
+		return filepath.Clean(trimmed), nil
+	}
+	cwd, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Clean(filepath.Join(cwd, trimmed)), nil
 }
