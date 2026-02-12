@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/atotto/clipboard"
-	"github.com/charmbracelet/bubbles/list"
+	"github.com/charmbracelet/bubbles/filepicker"
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -14,67 +14,72 @@ import (
 	"github.com/navio/bookmarks/internal/bookmarks"
 )
 
-type bookmarkItem struct {
-	b bookmarks.Bookmark
-}
-
-func (i bookmarkItem) Title() string       { return i.b.Name }
-func (i bookmarkItem) Description() string { return i.b.Path }
-func (i bookmarkItem) FilterValue() string {
-	return i.b.Name + " " + i.b.Path + " " + strings.Join(i.b.Tags, ",")
-}
-
 // ----------------
-// FIND (list)
+// FIND (filepicker)
 // ----------------
 
 type findModel struct {
-	list     list.Model
-	selected string
+	filepicker filepicker.Model
+	selected   string
+	quitting   bool
+	title      string
+	status     string
 }
 
-func newFindModel(items []list.Item, title string) findModel {
-	lm := list.New(items, list.NewDefaultDelegate(), 0, 0)
-	lm.Title = title
-	lm.SetShowStatusBar(true)
-	lm.SetFilteringEnabled(true)
-	lm.KeyMap.Quit.SetEnabled(true)
-	return findModel{list: lm}
+func newFindModel(startDir string, title string) findModel {
+	fp := filepicker.New()
+	fp.DirAllowed = true
+	fp.FileAllowed = false
+	fp.ShowHidden = false
+	fp.ShowPermissions = false
+	fp.ShowSize = false
+	fp.CurrentDirectory = startDir
+	return findModel{filepicker: fp, title: title}
 }
 
-func (m findModel) Init() tea.Cmd { return nil }
+func (m findModel) Init() tea.Cmd { return m.filepicker.Init() }
 
 func (m findModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "enter":
-			if it, ok := m.list.SelectedItem().(bookmarkItem); ok {
-				m.selected = it.b.Path
-				return m, tea.Quit
-			}
+		case "ctrl+c", "q":
+			m.quitting = true
+			return m, tea.Quit
 		case "c":
-			if it, ok := m.list.SelectedItem().(bookmarkItem); ok {
-				if err := clipboard.WriteAll(it.b.Path); err != nil {
-					m.list.NewStatusMessage(statusStyle.Render("copy failed: " + err.Error()))
-					return m, nil
+			if m.filepicker.Path != "" {
+				if err := clipboard.WriteAll(m.filepicker.Path); err != nil {
+					m.status = statusStyle.Render("copy failed: " + err.Error())
+				} else {
+					m.status = statusStyle.Render("copied: " + m.filepicker.Path)
 				}
-				m.list.NewStatusMessage(statusStyle.Render("copied: " + it.b.Path))
 				return m, nil
 			}
 		}
-	case tea.WindowSizeMsg:
-		m.list.SetSize(msg.Width, msg.Height)
 	}
 
 	var cmd tea.Cmd
-	m.list, cmd = m.list.Update(msg)
+	m.filepicker, cmd = m.filepicker.Update(msg)
+
+	if didSelect, path := m.filepicker.DidSelectFile(msg); didSelect {
+		m.selected = path
+		return m, tea.Quit
+	}
+
 	return m, cmd
 }
 
 func (m findModel) View() string {
-	help := lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("enter: print  •  c: copy  •  /: filter  •  q: quit")
-	return m.list.View() + "\n" + help
+	if m.quitting {
+		return ""
+	}
+	header := lipgloss.NewStyle().Bold(true).Render(m.title)
+	help := lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("enter: select  •  c: copy  •  h/←: back  •  l/→: open  •  q: quit")
+	view := header + "\n" + m.filepicker.View()
+	if m.status != "" {
+		view += "\n" + m.status
+	}
+	return view + "\n" + help
 }
 
 // ----------------
@@ -166,12 +171,8 @@ func buildTableRows(entries []bookmarks.Bookmark) []table.Row {
 	return rows
 }
 
-func runFindTUI(entries []bookmarks.Bookmark, title string) (string, error) {
-	items := make([]list.Item, 0, len(entries))
-	for _, e := range entries {
-		items = append(items, bookmarkItem{b: e})
-	}
-	m := newFindModel(items, title)
+func runFindTUI(startDir string, title string) (string, error) {
+	m := newFindModel(startDir, title)
 	p := tea.NewProgram(m, tea.WithAltScreen())
 	final, err := p.Run()
 	if err != nil {

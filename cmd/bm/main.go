@@ -218,18 +218,38 @@ func cmdFind(storePath string, args []string) error {
 	if err != nil {
 		return err
 	}
-	if len(positionals.args) != 0 {
-		return errors.New("usage: bm find [--tag x] [--tags a,b,c]")
+	if len(positionals.args) > 1 {
+		return errors.New("usage: bm find [name] [--tag x] [--tags a,b,c]")
 	}
 
-	entries, err := bookmarks.Load(storePath)
-	if err != nil {
-		return err
+	startDir := ""
+	if len(positionals.args) == 1 {
+		// If a bookmark name is given, start browsing from its path.
+		name := positionals.args[0]
+		entries, err := bookmarks.Load(storePath)
+		if err != nil {
+			return err
+		}
+		for _, e := range entries {
+			if e.Name == name {
+				startDir = e.Path
+				break
+			}
+		}
+		if startDir == "" {
+			return fmt.Errorf("bookmark not found: %s", name)
+		}
 	}
-	tags := parseTagFilters(positionals.flags)
-	entries = filterByAnyTag(entries, tags)
 
-	selected, err := runFindTUI(entries, "bm find")
+	if startDir == "" {
+		cwd, err := os.Getwd()
+		if err != nil {
+			return err
+		}
+		startDir = cwd
+	}
+
+	selected, err := runFindTUI(startDir, "bm find")
 	if err != nil {
 		return err
 	}
@@ -483,7 +503,7 @@ func usage() string {
   bm [--store <path>] <command>
   bm add [name] [path] [--tags a,b,c] [-f|--force]
   bm ls [--json] [--tag x]
-  bm find [--tag x] [--tags a,b,c]
+  bm find [name] [--tag x] [--tags a,b,c]
   bm table [--tag x] [--tags a,b,c]
   bm path <name>
   bm update <name> [--name <new>] [--tags a,b,c]
