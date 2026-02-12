@@ -56,6 +56,10 @@ func run(args []string) error {
 		return cmdList(storePath, rest[1:])
 	case "path":
 		return cmdPath(storePath, rest[1:])
+	case "go":
+		return cmdGo(storePath, rest[1:])
+	case "update":
+		return cmdUpdate(storePath, rest[1:])
 	case "rm":
 		return cmdRemove(storePath, rest[1:])
 	case "help":
@@ -199,6 +203,90 @@ func cmdPath(storePath string, args []string) error {
 	return fmt.Errorf("bookmark not found: %s", name)
 }
 
+func cmdGo(storePath string, args []string) error {
+	if len(args) != 1 {
+		return errors.New("usage: bm go <name>")
+	}
+	name := args[0]
+
+	entries, err := bookmarks.Load(storePath)
+	if err != nil {
+		return err
+	}
+	for _, entry := range entries {
+		if entry.Name == name {
+			// Note: a subprocess cannot change the parent shell's working directory.
+			// Print the path so callers can do: cd "$(bm go <name>)".
+			fmt.Println(entry.Path)
+			return nil
+		}
+	}
+	return fmt.Errorf("bookmark not found: %s", name)
+}
+
+func cmdUpdate(storePath string, args []string) error {
+	positionals, err := parseArgs(args, map[string]bool{"--name": true, "--tags": true})
+	if err != nil {
+		return err
+	}
+	if len(positionals.args) != 1 {
+		return errors.New("usage: bm update <name> [--name <new>] [--tags a,b,c]")
+	}
+	oldName := strings.TrimSpace(positionals.args[0])
+	if oldName == "" {
+		return errors.New("name cannot be empty")
+	}
+
+	newNameRaw, hasNewName := positionals.flags["--name"]
+	tagsRaw, hasTags := positionals.flags["--tags"]
+
+	if !hasNewName && !hasTags {
+		return errors.New("nothing to update: provide --name and/or --tags")
+	}
+
+	newName := strings.TrimSpace(newNameRaw)
+	if hasNewName {
+		if newName == "" {
+			return errors.New("new name cannot be empty")
+		}
+		if strings.Contains(newName, "\t") || strings.Contains(newName, "\n") {
+			return errors.New("new name cannot contain tabs or newlines")
+		}
+	}
+
+	entries, err := bookmarks.Load(storePath)
+	if err != nil {
+		return err
+	}
+
+	if hasNewName {
+		for _, entry := range entries {
+			if entry.Name == newName && entry.Name != oldName {
+				return fmt.Errorf("bookmark already exists: %s", newName)
+			}
+		}
+	}
+
+	found := false
+	for i := range entries {
+		if entries[i].Name != oldName {
+			continue
+		}
+		found = true
+		if hasNewName {
+			entries[i].Name = newName
+		}
+		if hasTags {
+			entries[i].Tags = bookmarks.NormalizeTags(tagsRaw)
+		}
+	}
+
+	if !found {
+		return fmt.Errorf("bookmark not found: %s", oldName)
+	}
+	return bookmarks.Save(storePath, entries)
+}
+
 func cmdRemove(storePath string, args []string) error {
 	positionals, err := parseArgs(args, map[string]bool{"-f": false, "--force": false})
 	if err != nil {
@@ -302,6 +390,8 @@ func usage() string {
   bm add <name> [path] [--tags a,b,c]
   bm ls [--json] [--tag x]
   bm path <name>
+  bm go <name>
+  bm update <name> [--name <new>] [--tags a,b,c]
   bm rm <name> [-f|--force]
 
 global flags:

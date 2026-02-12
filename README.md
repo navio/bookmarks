@@ -42,8 +42,15 @@ bm ls --tag work
 # print the path for a bookmark
 bm path proj
 
+# "go" to a bookmark (prints the target directory)
+cd "$(bm go proj)"
+
+# update tags and/or rename a bookmark
+bm update proj --tags work,go,tools
+bm update proj --name proj2
+
 # remove a bookmark
-bm rm proj
+bm rm proj2
 ```
 
 ## Store location
