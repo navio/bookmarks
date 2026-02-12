@@ -13,7 +13,7 @@ import (
 	"github.com/navio/bookmarks/internal/bookmarks"
 )
 
-const version = "0.3.1"
+const version = "0.3.2"
 
 func main() {
 	if err := run(os.Args[1:]); err != nil {
@@ -229,7 +229,7 @@ func cmdFind(storePath string, args []string) error {
 	tags := parseTagFilters(positionals.flags)
 	entries = filterByAnyTag(entries, tags)
 
-	selected, err := runFindTUI(entries, "bm find")
+	selected, err := runFindTUI(entries, "bm find", tags)
 	if err != nil {
 		return err
 	}

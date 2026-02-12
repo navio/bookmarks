@@ -32,15 +32,21 @@ func (i bookmarkItem) FilterValue() string {
 type findModel struct {
 	list     list.Model
 	selected string
+	tags     []string
 }
 
-func newFindModel(items []list.Item, title string) findModel {
-	lm := list.New(items, list.NewDefaultDelegate(), 0, 0)
+func newFindModel(items []list.Item, title string, tags []string) findModel {
+	delegate := list.NewDefaultDelegate()
+	delegate.Styles.NormalTitle = delegate.Styles.NormalTitle.Bold(true)
+	delegate.Styles.SelectedTitle = delegate.Styles.SelectedTitle.Bold(true)
+	delegate.Styles.DimmedTitle = delegate.Styles.DimmedTitle.Bold(true)
+
+	lm := list.New(items, delegate, 0, 0)
 	lm.Title = title
 	lm.SetShowStatusBar(true)
 	lm.SetFilteringEnabled(true)
 	lm.KeyMap.Quit.SetEnabled(true)
-	return findModel{list: lm}
+	return findModel{list: lm, tags: tags}
 }
 
 func (m findModel) Init() tea.Cmd { return nil }
@@ -73,9 +79,19 @@ func (m findModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
+var tagBannerStyle = lipgloss.NewStyle().
+	Foreground(lipgloss.Color("212")).
+	Bold(true)
+
 func (m findModel) View() string {
+	var b strings.Builder
+	if len(m.tags) > 0 {
+		b.WriteString(tagBannerStyle.Render("filters: "+strings.Join(m.tags, ", ")) + "\n")
+	}
+	b.WriteString(m.list.View())
 	help := lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("enter: print  •  c: copy  •  /: filter  •  q: quit")
-	return m.list.View() + "\n" + help
+	b.WriteString("\n" + help)
+	return b.String()
 }
 
 // ----------------
@@ -167,12 +183,12 @@ func buildTableRows(entries []bookmarks.Bookmark) []table.Row {
 	return rows
 }
 
-func runFindTUI(entries []bookmarks.Bookmark, title string) (string, error) {
+func runFindTUI(entries []bookmarks.Bookmark, title string, tags []string) (string, error) {
 	items := make([]list.Item, 0, len(entries))
 	for _, e := range entries {
 		items = append(items, bookmarkItem{b: e})
 	}
-	m := newFindModel(items, title)
+	m := newFindModel(items, title, tags)
 	p := tea.NewProgram(m, tea.WithAltScreen(), tea.WithOutput(os.Stderr))
 	final, err := p.Run()
 	if err != nil {
