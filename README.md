@@ -61,6 +61,10 @@ bm path proj
 # print the path for a bookmark (use it like this)
 cd "$(bm path proj)"
 
+# cd via interactive picker (works in subshells)
+cd "$(bm find)"
+cd "$(bm find --tag work)"
+
 # update tags and/or rename a bookmark
 bm update proj --tags work,go,tools
 bm update proj --name proj2
