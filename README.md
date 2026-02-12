@@ -27,8 +27,14 @@ go run ./cmd/bm --version
 ```sh
 bm help
 
-# add a bookmark (path defaults to the current directory)
+# add a bookmark
+# - if name is omitted, it defaults to the current directory name
+# - path defaults to the current directory
 bm add proj . --tags work,Go
+bm add
+
+# overwrite an existing bookmark (update path; tags only change if provided)
+bm add proj .. -f
 
 # list bookmarks
 bm ls

@@ -71,34 +71,49 @@ func run(args []string) error {
 }
 
 func cmdAdd(storePath string, args []string) error {
-	var tagsInput string
-	positionals, err := parseArgs(args, map[string]bool{"--tags": true})
+	positionals, err := parseArgs(args, map[string]bool{"--tags": true, "-f": false, "--force": false})
 	if err != nil {
 		return err
 	}
+	var (
+		tagsInput string
+		hasTags   bool
+	)
 	if value, ok := positionals.flags["--tags"]; ok {
 		tagsInput = value
+		hasTags = true
+	}
+	_, forceShort := positionals.flags["-f"]
+	_, forceLong := positionals.flags["--force"]
+	force := forceShort || forceLong
+
+	cwd, err := os.Getwd()
+	if err != nil {
+		return err
 	}
 
-	if len(positionals.args) < 1 || len(positionals.args) > 2 {
-		return fmt.Errorf("usage: bm add <name> [path] [--tags a,b,c]")
+	if len(positionals.args) > 2 {
+		return fmt.Errorf("usage: bm add [name] [path] [--tags a,b,c] [-f|--force]")
 	}
-	name := strings.TrimSpace(positionals.args[0])
+
+	name := ""
+	pathInput := ""
+	if len(positionals.args) >= 1 {
+		name = strings.TrimSpace(positionals.args[0])
+	}
+	if len(positionals.args) == 2 {
+		pathInput = positionals.args[1]
+	}
 	if name == "" {
+		name = filepath.Base(cwd)
+	}
+	if name == "" || name == "." || name == string(filepath.Separator) {
 		return errors.New("name cannot be empty")
 	}
 	if strings.Contains(name, "\t") || strings.Contains(name, "\n") {
 		return errors.New("name cannot contain tabs or newlines")
 	}
 
-	cwd, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-	pathInput := ""
-	if len(positionals.args) == 2 {
-		pathInput = positionals.args[1]
-	}
 	resolvedPath, err := bookmarks.ResolvePath(pathInput, cwd)
 	if err != nil {
 		return err
@@ -108,17 +123,29 @@ func cmdAdd(storePath string, args []string) error {
 	if err != nil {
 		return err
 	}
-	for _, entry := range entries {
-		if entry.Name == name {
+
+	for i := range entries {
+		if entries[i].Name != name {
+			continue
+		}
+		if !force {
 			return fmt.Errorf("bookmark already exists: %s", name)
 		}
+		entries[i].Path = resolvedPath
+		if hasTags {
+			entries[i].Tags = bookmarks.NormalizeTags(tagsInput)
+		}
+		return bookmarks.Save(storePath, entries)
 	}
 
 	entry := bookmarks.Bookmark{
 		Name:      name,
 		Path:      resolvedPath,
-		Tags:      bookmarks.NormalizeTags(tagsInput),
+		Tags:      nil,
 		CreatedAt: time.Now().UTC(),
+	}
+	if hasTags {
+		entry.Tags = bookmarks.NormalizeTags(tagsInput)
 	}
 	entries = append(entries, entry)
 
@@ -387,7 +414,7 @@ func usage() string {
 	return strings.TrimSpace(`usage:
   bm --version
   bm [--store <path>] <command>
-  bm add <name> [path] [--tags a,b,c]
+  bm add [name] [path] [--tags a,b,c] [-f|--force]
   bm ls [--json] [--tag x]
   bm path <name>
   bm go <name>
