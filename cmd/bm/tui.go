@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -172,7 +173,7 @@ func runFindTUI(entries []bookmarks.Bookmark, title string) (string, error) {
 		items = append(items, bookmarkItem{b: e})
 	}
 	m := newFindModel(items, title)
-	p := tea.NewProgram(m, tea.WithAltScreen())
+	p := tea.NewProgram(m, tea.WithAltScreen(), tea.WithOutput(os.Stderr))
 	final, err := p.Run()
 	if err != nil {
 		return "", err
@@ -187,7 +188,7 @@ func runFindTUI(entries []bookmarks.Bookmark, title string) (string, error) {
 func runTableTUI(entries []bookmarks.Bookmark, title string) (string, error) {
 	rows := buildTableRows(entries)
 	m := newTableModel(rows, title)
-	p := tea.NewProgram(m, tea.WithAltScreen())
+	p := tea.NewProgram(m, tea.WithAltScreen(), tea.WithOutput(os.Stderr))
 	final, err := p.Run()
 	if err != nil {
 		return "", err
