@@ -54,10 +54,12 @@ func run(args []string) error {
 		return cmdAdd(storePath, rest[1:])
 	case "ls":
 		return cmdList(storePath, rest[1:])
+	case "find":
+		return cmdFind(storePath, rest[1:])
+	case "table":
+		return cmdTable(storePath, rest[1:])
 	case "path":
 		return cmdPath(storePath, rest[1:])
-	case "go":
-		return cmdGo(storePath, rest[1:])
 	case "update":
 		return cmdUpdate(storePath, rest[1:])
 	case "rm":
@@ -211,6 +213,92 @@ func cmdList(storePath string, args []string) error {
 	return nil
 }
 
+func cmdFind(storePath string, args []string) error {
+	positionals, err := parseArgs(args, map[string]bool{"--tag": true, "--tags": true})
+	if err != nil {
+		return err
+	}
+	if len(positionals.args) != 0 {
+		return errors.New("usage: bm find [--tag x] [--tags a,b,c]")
+	}
+
+	entries, err := bookmarks.Load(storePath)
+	if err != nil {
+		return err
+	}
+	tags := parseTagFilters(positionals.flags)
+	entries = filterByAnyTag(entries, tags)
+
+	selected, err := runFindTUI(entries, "bm find")
+	if err != nil {
+		return err
+	}
+	if strings.TrimSpace(selected) != "" {
+		fmt.Println(selected)
+	}
+	return nil
+}
+
+func cmdTable(storePath string, args []string) error {
+	positionals, err := parseArgs(args, map[string]bool{"--tag": true, "--tags": true})
+	if err != nil {
+		return err
+	}
+	if len(positionals.args) != 0 {
+		return errors.New("usage: bm table [--tag x] [--tags a,b,c]")
+	}
+
+	entries, err := bookmarks.Load(storePath)
+	if err != nil {
+		return err
+	}
+	tags := parseTagFilters(positionals.flags)
+	entries = filterByAnyTag(entries, tags)
+
+	selected, err := runTableTUI(entries, "bm table")
+	if err != nil {
+		return err
+	}
+	if strings.TrimSpace(selected) != "" {
+		fmt.Println(selected)
+	}
+	return nil
+}
+
+func parseTagFilters(flags map[string]string) []string {
+	out := []string{}
+	if v, ok := flags["--tag"]; ok {
+		out = append(out, v)
+	}
+	if v, ok := flags["--tags"]; ok {
+		// supports comma-separated list
+		out = append(out, v)
+	}
+	if len(out) == 0 {
+		return nil
+	}
+
+	// Normalize and dedupe.
+	merged := strings.Join(out, ",")
+	return bookmarks.NormalizeTags(merged)
+}
+
+func filterByAnyTag(entries []bookmarks.Bookmark, tags []string) []bookmarks.Bookmark {
+	if len(tags) == 0 {
+		return entries
+	}
+	filtered := make([]bookmarks.Bookmark, 0, len(entries))
+	for _, e := range entries {
+		for _, t := range tags {
+			if bookmarks.ContainsTag(e.Tags, t) {
+				filtered = append(filtered, e)
+				break
+			}
+		}
+	}
+	return filtered
+}
+
 func cmdPath(storePath string, args []string) error {
 	if len(args) != 1 {
 		return errors.New("usage: bm path <name>")
@@ -223,27 +311,6 @@ func cmdPath(storePath string, args []string) error {
 	}
 	for _, entry := range entries {
 		if entry.Name == name {
-			fmt.Println(entry.Path)
-			return nil
-		}
-	}
-	return fmt.Errorf("bookmark not found: %s", name)
-}
-
-func cmdGo(storePath string, args []string) error {
-	if len(args) != 1 {
-		return errors.New("usage: bm go <name>")
-	}
-	name := args[0]
-
-	entries, err := bookmarks.Load(storePath)
-	if err != nil {
-		return err
-	}
-	for _, entry := range entries {
-		if entry.Name == name {
-			// Note: a subprocess cannot change the parent shell's working directory.
-			// Print the path so callers can do: cd "$(bm go <name>)".
 			fmt.Println(entry.Path)
 			return nil
 		}
@@ -416,8 +483,9 @@ func usage() string {
   bm [--store <path>] <command>
   bm add [name] [path] [--tags a,b,c] [-f|--force]
   bm ls [--json] [--tag x]
+  bm find [--tag x] [--tags a,b,c]
+  bm table [--tag x] [--tags a,b,c]
   bm path <name>
-  bm go <name>
   bm update <name> [--name <new>] [--tags a,b,c]
   bm rm <name> [-f|--force]
 

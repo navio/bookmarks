@@ -45,11 +45,21 @@ bm ls --json
 # filter by tag
 bm ls --tag work
 
+# interactive picker (list)
+# enter: print path  •  c: copy path  •  /: filter  •  q: quit
+bm find
+bm find --tags work,go
+
+# interactive table
+# enter: print path  •  c: copy path  •  q: quit
+bm table
+bm table --tag work
+
 # print the path for a bookmark
 bm path proj
 
-# "go" to a bookmark (prints the target directory)
-cd "$(bm go proj)"
+# print the path for a bookmark (use it like this)
+cd "$(bm path proj)"
 
 # update tags and/or rename a bookmark
 bm update proj --tags work,go,tools
