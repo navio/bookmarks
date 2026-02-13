@@ -1,0 +1,6 @@
+doc/node_modules/
+doc/.vitepress/cache/
+doc/.vitepress/dist/
+
+# local build artifact
+bm

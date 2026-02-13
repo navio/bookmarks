@@ -1,0 +1,19 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;600&display=swap');
+
+:root {
+  --vp-font-family-base: 'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system,
+    Segoe UI, Roboto, Helvetica, Arial, 'Apple Color Emoji', 'Segoe UI Emoji';
+  --vp-font-family-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo,
+    Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+
+  --vp-c-brand-1: #0f766e;
+  --vp-c-brand-2: #0d9488;
+  --vp-c-brand-3: #14b8a6;
+}
+
+.VPHome {
+  background:
+    radial-gradient(800px 600px at 20% 10%, rgba(20, 184, 166, 0.18), transparent 60%),
+    radial-gradient(700px 500px at 80% 20%, rgba(245, 158, 11, 0.14), transparent 55%),
+    radial-gradient(900px 700px at 50% 100%, rgba(15, 118, 110, 0.14), transparent 60%);
+}
