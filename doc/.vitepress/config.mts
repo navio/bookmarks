@@ -38,7 +38,7 @@ export default defineConfig({
     ],
     footer: {
       message:
-        'Docs by <a href="https://alberto.pub" target="_blank" rel="noreferrer">Alberto Navarro</a>'
+        '<a href="https://alberto.pub" target="_blank" rel="noreferrer">Alberto Navarro</a>'
     }
   }
 })
