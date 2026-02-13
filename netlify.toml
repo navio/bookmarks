@@ -1,0 +1,7 @@
+[build]
+  base = "doc"
+  command = "npm ci && npm test && npm run build"
+  publish = ".vitepress/dist"
+
+[build.environment]
+  NODE_VERSION = "20"
