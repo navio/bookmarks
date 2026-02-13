@@ -31,3 +31,7 @@ brew install navio/tap/bm
 bm add proj . --tags work,go
 cd "$(bm path proj)"
 ```
+
+## Author
+
+Docs maintained by [Alberto Navarro](https://alberto.pub).

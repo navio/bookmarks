@@ -4,6 +4,10 @@ function siteBase(): string {
   return process.env.VITEPRESS_BASE || '/'
 }
 
+const personalSiteIcon = {
+  svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 0 20"/><path d="M12 2a15.3 15.3 0 0 0 0 20"/></svg>'
+}
+
 export default defineConfig({
   lang: 'en-US',
   title: 'bm',
@@ -28,6 +32,13 @@ export default defineConfig({
         ]
       }
     ],
-    socialLinks: [{ icon: 'github', link: 'https://github.com/navio/bookmarks' }]
+    socialLinks: [
+      { icon: 'github', link: 'https://github.com/navio/bookmarks' },
+      { icon: personalSiteIcon, link: 'https://alberto.pub' }
+    ],
+    footer: {
+      message:
+        'Docs by <a href="https://alberto.pub" target="_blank" rel="noreferrer">Alberto Navarro</a>'
+    }
   }
 })
