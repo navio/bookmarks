@@ -1,22 +1,14 @@
 import { defineConfig } from 'vitepress'
 
-function pagesBase(): string {
-  const envBase = process.env.VITEPRESS_BASE
-  if (envBase) return envBase
-
-  if (process.env.GITHUB_ACTIONS) {
-    const repo = process.env.GITHUB_REPOSITORY?.split('/')[1]
-    if (repo) return `/${repo}/`
-  }
-
-  return '/'
+function siteBase(): string {
+  return process.env.VITEPRESS_BASE || '/'
 }
 
 export default defineConfig({
   lang: 'en-US',
   title: 'bm',
   description: 'Bookmark directories from the terminal.',
-  base: pagesBase(),
+  base: siteBase(),
 
   themeConfig: {
     nav: [
