@@ -13,7 +13,7 @@ import (
 	"github.com/navio/bookmarks/internal/bookmarks"
 )
 
-const version = "0.3.2"
+const version = "0.3.3"
 
 func main() {
 	if err := run(os.Args[1:]); err != nil {
@@ -54,6 +54,8 @@ func run(args []string) error {
 		return cmdAdd(storePath, rest[1:])
 	case "ls":
 		return cmdList(storePath, rest[1:])
+	case "tags":
+		return cmdTags(storePath, rest[1:])
 	case "find":
 		return cmdFind(storePath, rest[1:])
 	case "table":
@@ -209,6 +211,57 @@ func cmdList(storePath string, args []string) error {
 			strings.Join(entry.Tags, ","),
 			entry.CreatedAt.Format(time.RFC3339),
 		)
+	}
+	return nil
+}
+
+func cmdTags(storePath string, args []string) error {
+	positionals, err := parseArgs(args, map[string]bool{"--json": false})
+	if err != nil {
+		return err
+	}
+	if len(positionals.args) != 0 {
+		return errors.New("usage: bm tags [--json]")
+	}
+	_, jsonOutput := positionals.flags["--json"]
+
+	entries, err := bookmarks.Load(storePath)
+	if err != nil {
+		return err
+	}
+
+	counts := map[string]int{}
+	for _, e := range entries {
+		for _, tag := range e.Tags {
+			t := strings.TrimSpace(tag)
+			if t == "" {
+				continue
+			}
+			counts[t]++
+		}
+	}
+
+	tags := make([]string, 0, len(counts))
+	for t := range counts {
+		tags = append(tags, t)
+	}
+	sort.Strings(tags)
+
+	if jsonOutput {
+		payload := make([]map[string]any, 0, len(tags))
+		for _, t := range tags {
+			payload = append(payload, map[string]any{"tag": t, "count": counts[t]})
+		}
+		encoded, err := json.MarshalIndent(payload, "", "  ")
+		if err != nil {
+			return err
+		}
+		fmt.Println(string(encoded))
+		return nil
+	}
+
+	for _, t := range tags {
+		fmt.Printf("%s\t%d\n", t, counts[t])
 	}
 	return nil
 }
@@ -483,6 +536,7 @@ func usage() string {
   bm [--store <path>] <command>
   bm add [name] [path] [--tags a,b,c] [-f|--force]
   bm ls [--json] [--tag x]
+  bm tags [--json]
   bm find [--tag x] [--tags a,b,c]
   bm table [--tag x] [--tags a,b,c]
   bm path <name>

@@ -40,6 +40,21 @@ bm ls --json
 bm ls --tag work
 ```
 
+## `bm tags`
+
+List all tags in the store and the number of bookmarks using each tag.
+
+```sh
+bm tags [--json]
+```
+
+Examples:
+
+```sh
+bm tags
+bm tags --json
+```
+
 ## `bm find`
 
 Interactive picker (list). Prints the selected path to stdout.
