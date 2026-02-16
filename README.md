@@ -39,6 +39,9 @@ bm add proj .. -f
 # list bookmarks
 bm ls
 
+# list all tags (with counts)
+bm tags
+
 # list as JSON
 bm ls --json
 

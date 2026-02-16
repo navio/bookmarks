@@ -21,6 +21,12 @@ cd "$(bm find --tag work)"
 cd "$(bm table --tags work,go)"
 ```
 
+## Discover tags
+
+```sh
+bm tags
+```
+
 ## Copy paths from the TUI
 
 In `bm find` / `bm table`, press `c` to copy the selected path to your clipboard.
