@@ -112,6 +112,29 @@ Remove a bookmark.
 bm rm <name> [-f|--force]
 ```
 
+## `bm shell init`
+
+Print shell helpers that let your current shell session jump directly to bookmarks.
+
+```sh
+bm shell init [bash|zsh|fish]
+```
+
+Examples:
+
+```sh
+# zsh/bash
+eval "$(bm shell init zsh)"
+
+# fish
+bm shell init fish | source
+
+# then use helpers
+bmcd
+bmcd --tag work
+bmgo proj
+```
+
 ## `bm help`
 
 Show help.

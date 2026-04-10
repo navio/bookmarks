@@ -18,6 +18,8 @@ features:
     details: "Use `bm path <name>` for scripts and `cd \"$(bm path name)\"` in your shell."
   - title: "TUI picker"
     details: "Use `bm find` or `bm table` to fuzzy-pick, print, or copy paths."
+  - title: "Shell jump helpers"
+    details: "Run `bm shell init` to enable `bmcd` and `bmgo` for direct directory jumps in your shell."
   - title: "Simple store"
     details: "Bookmarks live in a TSV file under your XDG config directory. Human-editable and merge-friendly."
 ---

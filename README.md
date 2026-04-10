@@ -74,6 +74,16 @@ bm update proj --name proj2
 
 # remove a bookmark
 bm rm proj2
+
+# install shell helpers (bmcd, bmgo)
+eval "$(bm shell init zsh)"   # or: bash, fish
+
+# pick a bookmark and cd to it
+bmcd
+bmcd --tag work
+
+# cd by bookmark name
+bmgo proj
 ```
 
 ## Store location

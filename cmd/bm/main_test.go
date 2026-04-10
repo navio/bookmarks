@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -201,5 +202,43 @@ func TestCmdTags_JSON(t *testing.T) {
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("json=%#v, want %#v", got, want)
+	}
+}
+
+func TestCmdShellInit_Bash(t *testing.T) {
+	out, err := captureStdout(t, func() error {
+		return cmdShell([]string{"init", "bash"})
+	})
+	if err != nil {
+		t.Fatalf("cmdShell(init bash) error = %v", err)
+	}
+	if out == "" {
+		t.Fatalf("expected shell script output")
+	}
+	if !strings.Contains(out, "bmcd()") {
+		t.Fatalf("expected bmcd function in output, got %q", out)
+	}
+	if !strings.Contains(out, "bmgo()") {
+		t.Fatalf("expected bmgo function in output, got %q", out)
+	}
+}
+
+func TestCmdShellInit_AutodetectShell(t *testing.T) {
+	t.Setenv("SHELL", "/bin/zsh")
+	out, err := captureStdout(t, func() error {
+		return cmdShell([]string{"init"})
+	})
+	if err != nil {
+		t.Fatalf("cmdShell(init) error = %v", err)
+	}
+	if !strings.Contains(out, "bmcd()") {
+		t.Fatalf("expected sh-compatible output, got %q", out)
+	}
+}
+
+func TestCmdShellInit_UnsupportedShell(t *testing.T) {
+	err := cmdShell([]string{"init", "pwsh"})
+	if err == nil {
+		t.Fatalf("expected unsupported shell error")
 	}
 }

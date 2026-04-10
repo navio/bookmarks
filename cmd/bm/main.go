@@ -66,6 +66,8 @@ func run(args []string) error {
 		return cmdUpdate(storePath, rest[1:])
 	case "rm":
 		return cmdRemove(storePath, rest[1:])
+	case "shell":
+		return cmdShell(rest[1:])
 	case "help":
 		fmt.Println(usage())
 		return nil
@@ -472,6 +474,94 @@ func cmdRemove(storePath string, args []string) error {
 	return bookmarks.Save(storePath, result)
 }
 
+func cmdShell(args []string) error {
+	if len(args) == 0 || args[0] != "init" || len(args) > 2 {
+		return errors.New("usage: bm shell init [bash|zsh|fish]")
+	}
+
+	shellName, err := resolveShellName(args[1:])
+	if err != nil {
+		return err
+	}
+
+	switch shellName {
+	case "bash", "zsh":
+		fmt.Print(shellInitScriptSh())
+		return nil
+	case "fish":
+		fmt.Print(shellInitScriptFish())
+		return nil
+	default:
+		return fmt.Errorf("unsupported shell: %s (expected bash, zsh, or fish)", shellName)
+	}
+}
+
+func resolveShellName(args []string) (string, error) {
+	if len(args) == 1 {
+		name := strings.ToLower(strings.TrimSpace(args[0]))
+		if name == "" {
+			return "", errors.New("shell cannot be empty")
+		}
+		return name, nil
+	}
+
+	shellEnv := strings.TrimSpace(os.Getenv("SHELL"))
+	if shellEnv == "" {
+		return "", errors.New("could not detect shell; pass one of: bash, zsh, fish")
+	}
+
+	base := strings.ToLower(filepath.Base(shellEnv))
+	if strings.HasPrefix(base, "bash") {
+		return "bash", nil
+	}
+	if strings.HasPrefix(base, "zsh") {
+		return "zsh", nil
+	}
+	if strings.HasPrefix(base, "fish") {
+		return "fish", nil
+	}
+
+	return "", fmt.Errorf("unsupported shell from SHELL=%q; pass one of: bash, zsh, fish", shellEnv)
+}
+
+func shellInitScriptSh() string {
+	return strings.TrimLeft(`bmcd() {
+  local dir
+  dir="$(bm find "$@")" || return
+  [ -n "$dir" ] && cd "$dir"
+}
+
+bmgo() {
+  if [ "$#" -ne 1 ]; then
+    printf 'usage: bmgo <name>\n' >&2
+    return 1
+  fi
+  local dir
+  dir="$(bm path "$1")" || return
+  cd "$dir" || return
+}
+`, "\n")
+}
+
+func shellInitScriptFish() string {
+	return strings.TrimLeft(`function bmcd
+  set -l dir (bm find $argv)
+  or return
+  test -n "$dir"; and cd "$dir"
+end
+
+function bmgo
+  if test (count $argv) -ne 1
+    echo "usage: bmgo <name>" >&2
+    return 1
+  end
+  set -l dir (bm path $argv[1])
+  or return
+  cd "$dir"
+end
+`, "\n")
+}
+
 type parsedArgs struct {
 	args  []string
 	flags map[string]string
@@ -542,6 +632,7 @@ func usage() string {
   bm path <name>
   bm update <name> [--name <new>] [--tags a,b,c]
   bm rm <name> [-f|--force]
+  bm shell init [bash|zsh|fish]
 
 global flags:
   --store <path>   override default store path
