@@ -32,6 +32,7 @@ bm add proj . --tags work,go
 bm ls
 
 cd "$(bm path proj)"
+eval "$(bm go proj)"
 ```
 
 ## Interactive picker
@@ -42,4 +43,24 @@ cd "$(bm find)"
 
 # table picker
 cd "$(bm table)"
+```
+
+## Jump directly from your shell
+
+Install shell helpers once per shell session:
+
+```sh
+# zsh/bash
+eval "$(bm shell init zsh)"
+
+# fish
+bm shell init fish | source
+```
+
+Then use:
+
+```sh
+bmcd
+bmcd --tag work
+bmgo proj
 ```

@@ -89,6 +89,20 @@ Example:
 cd "$(bm path proj)"
 ```
 
+## `bm go`
+
+Print a shell-safe `cd` command for a bookmark name.
+
+```sh
+bm go <name>
+```
+
+Example:
+
+```sh
+eval "$(bm go proj)"
+```
+
 ## `bm update`
 
 Rename and/or retag an existing bookmark.
@@ -110,6 +124,29 @@ Remove a bookmark.
 
 ```sh
 bm rm <name> [-f|--force]
+```
+
+## `bm shell init`
+
+Print shell helpers that let your current shell session jump directly to bookmarks.
+
+```sh
+bm shell init [bash|zsh|fish]
+```
+
+Examples:
+
+```sh
+# zsh/bash
+eval "$(bm shell init zsh)"
+
+# fish
+bm shell init fish | source
+
+# then use helpers
+bmcd
+bmcd --tag work
+bmgo proj
 ```
 
 ## `bm help`

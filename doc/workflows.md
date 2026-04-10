@@ -4,6 +4,14 @@
 
 ```sh
 cd "$(bm path proj)"
+eval "$(bm go proj)"
+```
+
+## Jump by name with helper
+
+```sh
+eval "$(bm shell init zsh)"   # or bash
+bmgo proj
 ```
 
 ## Pick interactively
@@ -11,6 +19,21 @@ cd "$(bm path proj)"
 ```sh
 cd "$(bm find)"
 cd "$(bm table)"
+```
+
+## Pick and jump in one step
+
+```sh
+eval "$(bm shell init zsh)"   # or bash
+bmcd
+bmcd --tag work
+```
+
+Fish:
+
+```sh
+bm shell init fish | source
+bmcd
 ```
 
 ## Filter by tag

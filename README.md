@@ -64,6 +64,9 @@ bm path proj
 # print the path for a bookmark (use it like this)
 cd "$(bm path proj)"
 
+# output a cd command (use with eval)
+eval "$(bm go proj)"
+
 # cd via interactive picker (works in subshells)
 cd "$(bm find)"
 cd "$(bm find --tag work)"
@@ -74,6 +77,16 @@ bm update proj --name proj2
 
 # remove a bookmark
 bm rm proj2
+
+# install shell helpers (bmcd, bmgo)
+eval "$(bm shell init zsh)"   # or: bash, fish
+
+# pick a bookmark and cd to it
+bmcd
+bmcd --tag work
+
+# cd by bookmark name
+bmgo proj
 ```
 
 ## Store location

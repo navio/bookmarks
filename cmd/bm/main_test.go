@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -201,5 +202,76 @@ func TestCmdTags_JSON(t *testing.T) {
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("json=%#v, want %#v", got, want)
+	}
+}
+
+func TestCmdShellInit_Bash(t *testing.T) {
+	out, err := captureStdout(t, func() error {
+		return cmdShell([]string{"init", "bash"})
+	})
+	if err != nil {
+		t.Fatalf("cmdShell(init bash) error = %v", err)
+	}
+	if out == "" {
+		t.Fatalf("expected shell script output")
+	}
+	if !strings.Contains(out, "bmcd()") {
+		t.Fatalf("expected bmcd function in output, got %q", out)
+	}
+	if !strings.Contains(out, "bmgo()") {
+		t.Fatalf("expected bmgo function in output, got %q", out)
+	}
+}
+
+func TestCmdShellInit_AutodetectShell(t *testing.T) {
+	t.Setenv("SHELL", "/bin/zsh")
+	out, err := captureStdout(t, func() error {
+		return cmdShell([]string{"init"})
+	})
+	if err != nil {
+		t.Fatalf("cmdShell(init) error = %v", err)
+	}
+	if !strings.Contains(out, "bmcd()") {
+		t.Fatalf("expected sh-compatible output, got %q", out)
+	}
+}
+
+func TestCmdShellInit_UnsupportedShell(t *testing.T) {
+	err := cmdShell([]string{"init", "pwsh"})
+	if err == nil {
+		t.Fatalf("expected unsupported shell error")
+	}
+}
+
+func TestCmdGo_PrintsCdCommand(t *testing.T) {
+	root := t.TempDir()
+	storePath := filepath.Join(root, "bm.tsv")
+
+	entries := []bookmarks.Bookmark{
+		{Name: "proj", Path: "/tmp/my proj", CreatedAt: time.Date(2026, 4, 10, 12, 0, 0, 0, time.UTC)},
+	}
+	if err := bookmarks.Save(storePath, entries); err != nil {
+		t.Fatalf("Save() error = %v", err)
+	}
+
+	out, err := captureStdout(t, func() error {
+		return cmdGo(storePath, []string{"proj"})
+	})
+	if err != nil {
+		t.Fatalf("cmdGo() error = %v", err)
+	}
+	want := "cd -- '/tmp/my proj'\n"
+	if out != want {
+		t.Fatalf("stdout=%q, want %q", out, want)
+	}
+}
+
+func TestCmdGo_NotFound(t *testing.T) {
+	root := t.TempDir()
+	storePath := filepath.Join(root, "bm.tsv")
+
+	err := cmdGo(storePath, []string{"missing"})
+	if err == nil {
+		t.Fatalf("expected bookmark not found error")
 	}
 }

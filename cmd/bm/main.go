@@ -62,10 +62,14 @@ func run(args []string) error {
 		return cmdTable(storePath, rest[1:])
 	case "path":
 		return cmdPath(storePath, rest[1:])
+	case "go":
+		return cmdGo(storePath, rest[1:])
 	case "update":
 		return cmdUpdate(storePath, rest[1:])
 	case "rm":
 		return cmdRemove(storePath, rest[1:])
+	case "shell":
+		return cmdShell(rest[1:])
 	case "help":
 		fmt.Println(usage())
 		return nil
@@ -371,6 +375,31 @@ func cmdPath(storePath string, args []string) error {
 	return fmt.Errorf("bookmark not found: %s", name)
 }
 
+func cmdGo(storePath string, args []string) error {
+	if len(args) != 1 {
+		return errors.New("usage: bm go <name>")
+	}
+
+	name := args[0]
+	entries, err := bookmarks.Load(storePath)
+	if err != nil {
+		return err
+	}
+
+	for _, entry := range entries {
+		if entry.Name == name {
+			fmt.Printf("cd -- %s\n", shellQuote(entry.Path))
+			return nil
+		}
+	}
+
+	return fmt.Errorf("bookmark not found: %s", name)
+}
+
+func shellQuote(s string) string {
+	return "'" + strings.ReplaceAll(s, "'", "'\"'\"'") + "'"
+}
+
 func cmdUpdate(storePath string, args []string) error {
 	positionals, err := parseArgs(args, map[string]bool{"--name": true, "--tags": true})
 	if err != nil {
@@ -472,6 +501,94 @@ func cmdRemove(storePath string, args []string) error {
 	return bookmarks.Save(storePath, result)
 }
 
+func cmdShell(args []string) error {
+	if len(args) == 0 || args[0] != "init" || len(args) > 2 {
+		return errors.New("usage: bm shell init [bash|zsh|fish]")
+	}
+
+	shellName, err := resolveShellName(args[1:])
+	if err != nil {
+		return err
+	}
+
+	switch shellName {
+	case "bash", "zsh":
+		fmt.Print(shellInitScriptSh())
+		return nil
+	case "fish":
+		fmt.Print(shellInitScriptFish())
+		return nil
+	default:
+		return fmt.Errorf("unsupported shell: %s (expected bash, zsh, or fish)", shellName)
+	}
+}
+
+func resolveShellName(args []string) (string, error) {
+	if len(args) == 1 {
+		name := strings.ToLower(strings.TrimSpace(args[0]))
+		if name == "" {
+			return "", errors.New("shell cannot be empty")
+		}
+		return name, nil
+	}
+
+	shellEnv := strings.TrimSpace(os.Getenv("SHELL"))
+	if shellEnv == "" {
+		return "", errors.New("could not detect shell; pass one of: bash, zsh, fish")
+	}
+
+	base := strings.ToLower(filepath.Base(shellEnv))
+	if strings.HasPrefix(base, "bash") {
+		return "bash", nil
+	}
+	if strings.HasPrefix(base, "zsh") {
+		return "zsh", nil
+	}
+	if strings.HasPrefix(base, "fish") {
+		return "fish", nil
+	}
+
+	return "", fmt.Errorf("unsupported shell from SHELL=%q; pass one of: bash, zsh, fish", shellEnv)
+}
+
+func shellInitScriptSh() string {
+	return strings.TrimLeft(`bmcd() {
+  local dir
+  dir="$(bm find "$@")" || return
+  [ -n "$dir" ] && cd "$dir"
+}
+
+bmgo() {
+  if [ "$#" -ne 1 ]; then
+    printf 'usage: bmgo <name>\n' >&2
+    return 1
+  fi
+  local cmd
+  cmd="$(bm go "$1")" || return
+  eval "$cmd"
+}
+`, "\n")
+}
+
+func shellInitScriptFish() string {
+	return strings.TrimLeft(`function bmcd
+  set -l dir (bm find $argv)
+  or return
+  test -n "$dir"; and cd "$dir"
+end
+
+function bmgo
+  if test (count $argv) -ne 1
+    echo "usage: bmgo <name>" >&2
+    return 1
+  end
+  set -l cmd (bm go $argv[1])
+  or return
+  eval $cmd
+end
+`, "\n")
+}
+
 type parsedArgs struct {
 	args  []string
 	flags map[string]string
@@ -540,8 +657,10 @@ func usage() string {
   bm find [--tag x] [--tags a,b,c]
   bm table [--tag x] [--tags a,b,c]
   bm path <name>
+  bm go <name>
   bm update <name> [--name <new>] [--tags a,b,c]
   bm rm <name> [-f|--force]
+  bm shell init [bash|zsh|fish]
 
 global flags:
   --store <path>   override default store path
