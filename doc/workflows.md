@@ -4,6 +4,14 @@
 
 ```sh
 cd "$(bm path proj)"
+eval "$(bm go proj)"
+```
+
+## Jump by name with helper
+
+```sh
+eval "$(bm shell init zsh)"   # or bash
+bmgo proj
 ```
 
 ## Pick interactively

@@ -31,5 +31,8 @@ brew tap navio/tap
 brew install navio/tap/bm
 
 bm add proj . --tags work,go
-cd "$(bm path proj)"
+eval "$(bm go proj)"
+
+eval "$(bm shell init zsh)"
+bmgo proj
 ```
