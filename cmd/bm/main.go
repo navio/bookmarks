@@ -62,6 +62,8 @@ func run(args []string) error {
 		return cmdTable(storePath, rest[1:])
 	case "path":
 		return cmdPath(storePath, rest[1:])
+	case "go":
+		return cmdGo(storePath, rest[1:])
 	case "update":
 		return cmdUpdate(storePath, rest[1:])
 	case "rm":
@@ -373,6 +375,31 @@ func cmdPath(storePath string, args []string) error {
 	return fmt.Errorf("bookmark not found: %s", name)
 }
 
+func cmdGo(storePath string, args []string) error {
+	if len(args) != 1 {
+		return errors.New("usage: bm go <name>")
+	}
+
+	name := args[0]
+	entries, err := bookmarks.Load(storePath)
+	if err != nil {
+		return err
+	}
+
+	for _, entry := range entries {
+		if entry.Name == name {
+			fmt.Printf("cd -- %s\n", shellQuote(entry.Path))
+			return nil
+		}
+	}
+
+	return fmt.Errorf("bookmark not found: %s", name)
+}
+
+func shellQuote(s string) string {
+	return "'" + strings.ReplaceAll(s, "'", "'\"'\"'") + "'"
+}
+
 func cmdUpdate(storePath string, args []string) error {
 	positionals, err := parseArgs(args, map[string]bool{"--name": true, "--tags": true})
 	if err != nil {
@@ -536,9 +563,9 @@ bmgo() {
     printf 'usage: bmgo <name>\n' >&2
     return 1
   fi
-  local dir
-  dir="$(bm path "$1")" || return
-  cd "$dir" || return
+  local cmd
+  cmd="$(bm go "$1")" || return
+  eval "$cmd"
 }
 `, "\n")
 }
@@ -555,9 +582,9 @@ function bmgo
     echo "usage: bmgo <name>" >&2
     return 1
   end
-  set -l dir (bm path $argv[1])
+  set -l cmd (bm go $argv[1])
   or return
-  cd "$dir"
+  eval $cmd
 end
 `, "\n")
 }
@@ -630,6 +657,7 @@ func usage() string {
   bm find [--tag x] [--tags a,b,c]
   bm table [--tag x] [--tags a,b,c]
   bm path <name>
+  bm go <name>
   bm update <name> [--name <new>] [--tags a,b,c]
   bm rm <name> [-f|--force]
   bm shell init [bash|zsh|fish]

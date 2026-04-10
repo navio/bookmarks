@@ -64,6 +64,9 @@ bm path proj
 # print the path for a bookmark (use it like this)
 cd "$(bm path proj)"
 
+# output a cd command (use with eval)
+eval "$(bm go proj)"
+
 # cd via interactive picker (works in subshells)
 cd "$(bm find)"
 cd "$(bm find --tag work)"

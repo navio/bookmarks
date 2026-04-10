@@ -32,6 +32,7 @@ bm add proj . --tags work,go
 bm ls
 
 cd "$(bm path proj)"
+eval "$(bm go proj)"
 ```
 
 ## Interactive picker

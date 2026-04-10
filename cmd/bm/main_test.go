@@ -242,3 +242,36 @@ func TestCmdShellInit_UnsupportedShell(t *testing.T) {
 		t.Fatalf("expected unsupported shell error")
 	}
 }
+
+func TestCmdGo_PrintsCdCommand(t *testing.T) {
+	root := t.TempDir()
+	storePath := filepath.Join(root, "bm.tsv")
+
+	entries := []bookmarks.Bookmark{
+		{Name: "proj", Path: "/tmp/my proj", CreatedAt: time.Date(2026, 4, 10, 12, 0, 0, 0, time.UTC)},
+	}
+	if err := bookmarks.Save(storePath, entries); err != nil {
+		t.Fatalf("Save() error = %v", err)
+	}
+
+	out, err := captureStdout(t, func() error {
+		return cmdGo(storePath, []string{"proj"})
+	})
+	if err != nil {
+		t.Fatalf("cmdGo() error = %v", err)
+	}
+	want := "cd -- '/tmp/my proj'\n"
+	if out != want {
+		t.Fatalf("stdout=%q, want %q", out, want)
+	}
+}
+
+func TestCmdGo_NotFound(t *testing.T) {
+	root := t.TempDir()
+	storePath := filepath.Join(root, "bm.tsv")
+
+	err := cmdGo(storePath, []string{"missing"})
+	if err == nil {
+		t.Fatalf("expected bookmark not found error")
+	}
+}

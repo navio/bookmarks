@@ -89,6 +89,20 @@ Example:
 cd "$(bm path proj)"
 ```
 
+## `bm go`
+
+Print a shell-safe `cd` command for a bookmark name.
+
+```sh
+bm go <name>
+```
+
+Example:
+
+```sh
+eval "$(bm go proj)"
+```
+
 ## `bm update`
 
 Rename and/or retag an existing bookmark.
