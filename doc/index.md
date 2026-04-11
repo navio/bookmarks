@@ -19,7 +19,7 @@ features:
   - title: "TUI picker"
     details: "Use `bm find` or `bm table` to fuzzy-pick, print, or copy paths."
   - title: "Shell jump helpers"
-    details: "Run `bm shell init` to enable `bmcd` and `bmgo` for direct directory jumps in your shell."
+    details: "Run `bm init` to enable direct `bm go <name>` jumps plus `bmcd` and `bmgo` helpers in your shell."
   - title: "Simple store"
     details: "Bookmarks live in a TSV file under your XDG config directory. Human-editable and merge-friendly."
 ---
@@ -33,6 +33,7 @@ brew install navio/tap/bm
 bm add proj . --tags work,go
 eval "$(bm go proj)"
 
-eval "$(bm shell init zsh)"
+eval "$(bm init zsh)"
+bm go proj
 bmgo proj
 ```

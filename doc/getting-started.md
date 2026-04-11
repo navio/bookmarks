@@ -47,19 +47,20 @@ cd "$(bm table)"
 
 ## Jump directly from your shell
 
-Install shell helpers once per shell session:
+Install shell integration once per shell session:
 
 ```sh
 # zsh/bash
-eval "$(bm shell init zsh)"
+eval "$(bm init zsh)"
 
 # fish
-bm shell init fish | source
+bm init fish | source
 ```
 
 Then use:
 
 ```sh
+bm go proj
 bmcd
 bmcd --tag work
 bmgo proj
