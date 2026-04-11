@@ -205,15 +205,21 @@ func TestCmdTags_JSON(t *testing.T) {
 	}
 }
 
-func TestCmdShellInit_Bash(t *testing.T) {
+func TestCmdInit_Bash(t *testing.T) {
 	out, err := captureStdout(t, func() error {
-		return cmdShell([]string{"init", "bash"})
+		return cmdInit([]string{"bash"})
 	})
 	if err != nil {
-		t.Fatalf("cmdShell(init bash) error = %v", err)
+		t.Fatalf("cmdInit(bash) error = %v", err)
 	}
 	if out == "" {
 		t.Fatalf("expected shell script output")
+	}
+	if !strings.Contains(out, "bm()") {
+		t.Fatalf("expected bm wrapper function in output, got %q", out)
+	}
+	if !strings.Contains(out, "command bm go") {
+		t.Fatalf("expected bm go interception in output, got %q", out)
 	}
 	if !strings.Contains(out, "bmcd()") {
 		t.Fatalf("expected bmcd function in output, got %q", out)
@@ -223,23 +229,35 @@ func TestCmdShellInit_Bash(t *testing.T) {
 	}
 }
 
-func TestCmdShellInit_AutodetectShell(t *testing.T) {
+func TestCmdInit_AutodetectShell(t *testing.T) {
 	t.Setenv("SHELL", "/bin/zsh")
 	out, err := captureStdout(t, func() error {
-		return cmdShell([]string{"init"})
+		return cmdInit([]string{})
 	})
 	if err != nil {
-		t.Fatalf("cmdShell(init) error = %v", err)
+		t.Fatalf("cmdInit() error = %v", err)
 	}
 	if !strings.Contains(out, "bmcd()") {
 		t.Fatalf("expected sh-compatible output, got %q", out)
 	}
 }
 
-func TestCmdShellInit_UnsupportedShell(t *testing.T) {
-	err := cmdShell([]string{"init", "pwsh"})
+func TestCmdInit_UnsupportedShell(t *testing.T) {
+	err := cmdInit([]string{"pwsh"})
 	if err == nil {
 		t.Fatalf("expected unsupported shell error")
+	}
+}
+
+func TestCmdShellInit_CompatAlias(t *testing.T) {
+	out, err := captureStdout(t, func() error {
+		return cmdShell([]string{"init", "bash"})
+	})
+	if err != nil {
+		t.Fatalf("cmdShell(init bash) error = %v", err)
+	}
+	if !strings.Contains(out, "bm()") {
+		t.Fatalf("expected bm wrapper in compatibility output, got %q", out)
 	}
 }
 

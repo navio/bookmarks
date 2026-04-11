@@ -10,7 +10,8 @@ eval "$(bm go proj)"
 ## Jump by name with helper
 
 ```sh
-eval "$(bm shell init zsh)"   # or bash
+eval "$(bm init zsh)"   # or bash
+bm go proj
 bmgo proj
 ```
 
@@ -24,7 +25,7 @@ cd "$(bm table)"
 ## Pick and jump in one step
 
 ```sh
-eval "$(bm shell init zsh)"   # or bash
+eval "$(bm init zsh)"   # or bash
 bmcd
 bmcd --tag work
 ```
@@ -32,7 +33,7 @@ bmcd --tag work
 Fish:
 
 ```sh
-bm shell init fish | source
+bm init fish | source
 bmcd
 ```
 

@@ -126,27 +126,38 @@ Remove a bookmark.
 bm rm <name> [-f|--force]
 ```
 
-## `bm shell init`
+## `bm init`
 
-Print shell helpers that let your current shell session jump directly to bookmarks.
+Print shell integration that lets your current shell session run `bm go <name>` as a direct directory change.
 
 ```sh
-bm shell init [bash|zsh|fish]
+bm init [bash|zsh|fish]
 ```
 
 Examples:
 
 ```sh
 # zsh/bash
-eval "$(bm shell init zsh)"
+eval "$(bm init zsh)"
+
+# now this changes directory directly
+bm go proj
 
 # fish
-bm shell init fish | source
+bm init fish | source
 
 # then use helpers
 bmcd
 bmcd --tag work
 bmgo proj
+```
+
+## `bm shell init`
+
+Compatibility alias for `bm init`.
+
+```sh
+bm shell init [bash|zsh|fish]
 ```
 
 ## `bm help`

@@ -13,7 +13,7 @@ import (
 	"github.com/navio/bookmarks/internal/bookmarks"
 )
 
-const version = "0.3.3"
+const version = "0.4.0"
 
 func main() {
 	if err := run(os.Args[1:]); err != nil {
@@ -64,6 +64,8 @@ func run(args []string) error {
 		return cmdPath(storePath, rest[1:])
 	case "go":
 		return cmdGo(storePath, rest[1:])
+	case "init":
+		return cmdInit(rest[1:])
 	case "update":
 		return cmdUpdate(storePath, rest[1:])
 	case "rm":
@@ -502,11 +504,18 @@ func cmdRemove(storePath string, args []string) error {
 }
 
 func cmdShell(args []string) error {
-	if len(args) == 0 || args[0] != "init" || len(args) > 2 {
+	if len(args) == 0 || args[0] != "init" {
 		return errors.New("usage: bm shell init [bash|zsh|fish]")
 	}
+	return cmdInit(args[1:])
+}
 
-	shellName, err := resolveShellName(args[1:])
+func cmdInit(args []string) error {
+	if len(args) > 1 {
+		return errors.New("usage: bm init [bash|zsh|fish]")
+	}
+
+	shellName, err := resolveShellName(args)
 	if err != nil {
 		return err
 	}
@@ -552,9 +561,20 @@ func resolveShellName(args []string) (string, error) {
 }
 
 func shellInitScriptSh() string {
-	return strings.TrimLeft(`bmcd() {
+	return strings.TrimLeft(`bm() {
+  if [ "$1" = "go" ]; then
+    shift
+    local cmd
+    cmd="$(command bm go "$@")" || return
+    eval "$cmd"
+    return
+  fi
+  command bm "$@"
+}
+
+bmcd() {
   local dir
-  dir="$(bm find "$@")" || return
+  dir="$(command bm find "$@")" || return
   [ -n "$dir" ] && cd "$dir"
 }
 
@@ -563,16 +583,25 @@ bmgo() {
     printf 'usage: bmgo <name>\n' >&2
     return 1
   fi
-  local cmd
-  cmd="$(bm go "$1")" || return
-  eval "$cmd"
+  bm go "$1"
 }
 `, "\n")
 }
 
 func shellInitScriptFish() string {
-	return strings.TrimLeft(`function bmcd
-  set -l dir (bm find $argv)
+	return strings.TrimLeft(`function bm
+  if test (count $argv) -gt 0; and test "$argv[1]" = "go"
+    set -e argv[1]
+    set -l cmd (command bm go $argv)
+    or return
+    eval $cmd
+    return
+  end
+  command bm $argv
+end
+
+function bmcd
+  set -l dir (command bm find $argv)
   or return
   test -n "$dir"; and cd "$dir"
 end
@@ -582,9 +611,7 @@ function bmgo
     echo "usage: bmgo <name>" >&2
     return 1
   end
-  set -l cmd (bm go $argv[1])
-  or return
-  eval $cmd
+  bm go $argv[1]
 end
 `, "\n")
 }
@@ -658,9 +685,10 @@ func usage() string {
   bm table [--tag x] [--tags a,b,c]
   bm path <name>
   bm go <name>
+  bm init [bash|zsh|fish]
   bm update <name> [--name <new>] [--tags a,b,c]
   bm rm <name> [-f|--force]
-  bm shell init [bash|zsh|fish]
+  bm shell init [bash|zsh|fish]   (compat)
 
 global flags:
   --store <path>   override default store path
