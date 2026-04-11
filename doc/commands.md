@@ -57,23 +57,23 @@ bm tags --json
 
 ## `bm find`
 
-Interactive picker (list). Prints the selected path to stdout.
+Interactive picker (list). Prints `bm go <name>` for the selected bookmark.
 
 ```sh
 bm find [--tag x] [--tags a,b,c]
 ```
 
-Keys: `enter` print path, `c` copy path, `/` filter, `q` quit.
+Keys: `enter` jump, `c` copy path, `/` filter, `q` quit.
 
 ## `bm table`
 
-Interactive picker (table). Prints the selected path to stdout.
+Interactive picker (table). Prints `bm go <name>` for the selected bookmark.
 
 ```sh
 bm table [--tag x] [--tags a,b,c]
 ```
 
-Keys: `enter` print path, `c` copy path, `q` quit.
+Keys: `enter` jump, `c` copy path, `q` quit.
 
 ## `bm path`
 
@@ -142,6 +142,8 @@ eval "$(bm init zsh)"
 
 # now this changes directory directly
 bm go proj
+bm find
+bm table
 
 # fish
 bm init fish | source

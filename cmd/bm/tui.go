@@ -57,7 +57,7 @@ func (m findModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "enter":
 			if it, ok := m.list.SelectedItem().(bookmarkItem); ok {
-				m.selected = it.b.Path
+				m.selected = it.b.Name
 				return m, tea.Quit
 			}
 		case "c":
@@ -89,7 +89,7 @@ func (m findModel) View() string {
 		b.WriteString(tagBannerStyle.Render("filters: "+strings.Join(m.tags, ", ")) + "\n")
 	}
 	b.WriteString(m.list.View())
-	help := lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("enter: print  •  c: copy  •  /: filter  •  q: quit")
+	help := lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("enter: jump  •  c: copy path  •  /: filter  •  q: quit")
 	b.WriteString("\n" + help)
 	return b.String()
 }
@@ -137,8 +137,8 @@ func (m tableModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		case "enter":
 			row := m.table.SelectedRow()
-			if len(row) >= 2 {
-				m.selected = row[1]
+			if len(row) >= 1 {
+				m.selected = row[0]
 			}
 			return m, tea.Quit
 		case "c":
@@ -160,7 +160,7 @@ func (m tableModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m tableModel) View() string {
 	header := lipgloss.NewStyle().Bold(true).Render("bm table")
-	help := lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("enter: print  •  c: copy  •  q: quit")
+	help := lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("enter: jump  •  c: copy path  •  q: quit")
 	return header + "\n" + m.table.View() + "\n" + help
 }
 

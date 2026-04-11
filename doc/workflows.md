@@ -18,8 +18,8 @@ bmgo proj
 ## Pick interactively
 
 ```sh
-cd "$(bm find)"
-cd "$(bm table)"
+bm find
+bm table
 ```
 
 ## Pick and jump in one step
@@ -41,8 +41,8 @@ bmcd
 
 ```sh
 bm ls --tag work
-cd "$(bm find --tag work)"
-cd "$(bm table --tags work,go)"
+bm find --tag work
+bm table --tags work,go
 ```
 
 ## Discover tags

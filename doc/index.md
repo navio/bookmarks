@@ -17,7 +17,7 @@ features:
   - title: "Fast path recall"
     details: "Use `bm path <name>` for scripts and `cd \"$(bm path name)\"` in your shell."
   - title: "TUI picker"
-    details: "Use `bm find` or `bm table` to fuzzy-pick, print, or copy paths."
+    details: "Use `bm find` or `bm table` to fuzzy-pick bookmarks, jump directly, or copy paths."
   - title: "Shell jump helpers"
     details: "Run `bm init` to enable direct `bm go <name>` jumps plus `bmcd` and `bmgo` helpers in your shell."
   - title: "Simple store"

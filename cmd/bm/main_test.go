@@ -221,6 +221,9 @@ func TestCmdInit_Bash(t *testing.T) {
 	if !strings.Contains(out, "command bm go") {
 		t.Fatalf("expected bm go interception in output, got %q", out)
 	}
+	if !strings.Contains(out, "\"$1\" = \"find\"") || !strings.Contains(out, "\"$1\" = \"table\"") {
+		t.Fatalf("expected find/table interception in output, got %q", out)
+	}
 	if !strings.Contains(out, "bmcd()") {
 		t.Fatalf("expected bmcd function in output, got %q", out)
 	}
@@ -291,5 +294,13 @@ func TestCmdGo_NotFound(t *testing.T) {
 	err := cmdGo(storePath, []string{"missing"})
 	if err == nil {
 		t.Fatalf("expected bookmark not found error")
+	}
+}
+
+func TestFormatGoCommand(t *testing.T) {
+	got := formatGoCommand("my proj")
+	want := "bm go 'my proj'"
+	if got != want {
+		t.Fatalf("formatGoCommand()=%q, want %q", got, want)
 	}
 }
