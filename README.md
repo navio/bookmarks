@@ -11,6 +11,10 @@ brew tap navio/tap
 brew install navio/tap/bm
 
 bm --version
+
+# enable shell integration (required for direct bm go/bm find/bm table jumps)
+echo 'eval "$(bm init zsh)"' >> ~/.zshrc
+source ~/.zshrc
 ```
 
 ### From source
@@ -49,12 +53,12 @@ bm ls --json
 bm ls --tag work
 
 # interactive picker (list)
-# enter: print path  •  c: copy path  •  /: filter  •  q: quit
+# enter: jump  •  c: copy path  •  /: filter  •  q: quit
 bm find
 bm find --tags work,go
 
 # interactive table
-# enter: print path  •  c: copy path  •  q: quit
+# enter: jump  •  c: copy path  •  q: quit
 bm table
 bm table --tag work
 
@@ -67,9 +71,12 @@ cd "$(bm path proj)"
 # output a cd command (use with eval)
 eval "$(bm go proj)"
 
-# cd via interactive picker (works in subshells)
-cd "$(bm find)"
-cd "$(bm find --tag work)"
+# interactive jump via picker (after `bm init`)
+bm find
+bm find --tag work
+
+# without `bm init`, eval the command output
+eval "$(bm find)"
 
 # update tags and/or rename a bookmark
 bm update proj --tags work,go,tools

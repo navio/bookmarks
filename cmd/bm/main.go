@@ -13,7 +13,7 @@ import (
 	"github.com/navio/bookmarks/internal/bookmarks"
 )
 
-const version = "0.4.1"
+const version = "0.4.2"
 
 func main() {
 	if err := run(os.Args[1:]); err != nil {
@@ -293,7 +293,7 @@ func cmdFind(storePath string, args []string) error {
 		return err
 	}
 	if strings.TrimSpace(selected) != "" {
-		fmt.Println(selected)
+		fmt.Println(formatGoCommand(selected))
 	}
 	return nil
 }
@@ -319,7 +319,7 @@ func cmdTable(storePath string, args []string) error {
 		return err
 	}
 	if strings.TrimSpace(selected) != "" {
-		fmt.Println(selected)
+		fmt.Println(formatGoCommand(selected))
 	}
 	return nil
 }
@@ -400,6 +400,10 @@ func cmdGo(storePath string, args []string) error {
 
 func shellQuote(s string) string {
 	return "'" + strings.ReplaceAll(s, "'", "'\"'\"'") + "'"
+}
+
+func formatGoCommand(name string) string {
+	return "bm go " + shellQuote(name)
 }
 
 func cmdUpdate(storePath string, args []string) error {
@@ -569,6 +573,12 @@ func shellInitScriptSh() string {
     eval "$cmd"
     return
   fi
+  if [ "$1" = "find" ] || [ "$1" = "table" ]; then
+    local cmd
+    cmd="$(command bm "$@")" || return
+    [ -n "$cmd" ] && eval "$cmd"
+    return
+  fi
   command bm "$@"
 }
 
@@ -590,12 +600,20 @@ bmgo() {
 
 func shellInitScriptFish() string {
 	return strings.TrimLeft(`function bm
-  if test (count $argv) -gt 0; and test "$argv[1]" = "go"
-    set -e argv[1]
-    set -l cmd (command bm go $argv)
-    or return
-    eval $cmd
-    return
+  if test (count $argv) -gt 0
+    if test "$argv[1]" = "go"
+      set -e argv[1]
+      set -l cmd (command bm go $argv)
+      or return
+      eval $cmd
+      return
+    end
+    if test "$argv[1]" = "find"; or test "$argv[1]" = "table"
+      set -l cmd (command bm $argv)
+      or return
+      test -n "$cmd"; and eval $cmd
+      return
+    end
   end
   command bm $argv
 end

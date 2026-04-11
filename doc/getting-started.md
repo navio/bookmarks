@@ -11,6 +11,10 @@ brew tap navio/tap
 brew install navio/tap/bm
 
 bm --version
+
+# enable shell integration (recommended)
+echo 'eval "$(bm init zsh)"' >> ~/.zshrc
+source ~/.zshrc
 ```
 
 ### From source
@@ -39,10 +43,13 @@ eval "$(bm go proj)"
 
 ```sh
 # list picker (supports '/' filtering)
-cd "$(bm find)"
+bm find
 
 # table picker
-cd "$(bm table)"
+bm table
+
+# without shell integration, eval the command output
+eval "$(bm find)"
 ```
 
 ## Jump directly from your shell
